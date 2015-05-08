@@ -21,7 +21,8 @@ class Validator
      */
     static function isValidWkt($coverage)
     {
-
+        debug("isValidWkt");
+        debug(strtolower($coverage));
         $parts = array(
             'point',
             'linestring',
@@ -31,7 +32,7 @@ class Validator
             'multipolygon',
             'geometrycollection'
         );
-
+        debug('/^\s*('.implode('|', $parts).')/');
         return (bool) preg_match(
             '/^\s*('.implode('|', $parts).')/',
             strtolower($coverage)

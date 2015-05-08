@@ -235,7 +235,53 @@ class NeatlineRecord extends Neatline_Row_Expandable
      */
     public function compileWms()
     {
+        debug("compileWms");
+        $this->is_wms = ($this->wms_address && $this->wms_layers);
+        if (!$this->is_wms){
+            
+            $item = $this->getItem();
+            
+            try {
+            
+                // Try to get a DC "Reference" value.
+                $ref_list = metadata(
+                    $item, array('Dublin Core', 'Relation'), 'all');
+             
+                foreach ($ref_list as $ref){
+                
+                    debug(print_r($ref, true));
+                    
+                    $url = parse_url($ref);
+                    
+                    if ($url) {
+                        debug(print_r($url, true));
+                        
+                        if (stripos($url["path"], "wms") &&
+                            strpos($url["query"], "layers=") >= 0) {
+                            debug("true");
+                            $this->wms_address =
+                                $url[scheme]."://".$url["host"].$url["path"];
+                            parse_str($url["query"], $url_query);
+                            $this->wms_layers = $url_query["layers"];
+                            $this->fill_color = "#ffffff";
+                        }
+                        debug($this->wms_layers);
+                        debug($this->wms_address);
+                    }
+               
+                    // Try to convert it to WKT.
+                    //$this->coverage = nl_getWkt($coverage);
+                    
+                    // Stop looking if one is found
+                    //if (isset($this->coverage)){
+                    //    return;
+                }
+            
+            } catch (Exception $e) {}
+        }
+                
         $this->is_wms = ($this->wms_address && $this->wms_layers) ? 1 : 0;
+        
     }
 
 
@@ -245,7 +291,7 @@ class NeatlineRecord extends Neatline_Row_Expandable
      */
     public function compileCoverage()
     {
-
+        debug("compileCoverage");
         $item = $this->getItem();
 
         // Only try to import coverage values if (a) a parent item is defined
@@ -273,12 +319,23 @@ class NeatlineRecord extends Neatline_Row_Expandable
                 try {
 
                     // Try to get a DC "Coverage" value.
-                    $coverage = metadata(
-                        $item, array('Dublin Core', 'Coverage')
+                    $coverage_list = metadata(
+                        $item, array('Dublin Core', 'Coverage'),
+                        'all'
                     );
-
-                    // Try to convert it to WKT.
-                    $this->coverage = nl_getWkt($coverage);
+                    
+                    foreach ($coverage_list as $coverage){
+                    
+                        debug(print_r($coverage, true));
+    
+                        // Try to convert it to WKT.
+                        $this->coverage = nl_getWkt($coverage);
+                        
+                        // Stop looking if one is found
+                        if (isset($this->coverage)){
+                            return;
+                        }
+                    }
 
                 } catch (Exception $e) {}
 

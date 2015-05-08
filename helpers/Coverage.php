@@ -28,6 +28,23 @@ function nl_kml2wkt($kml) {
 
 }
 
+/**
+ * Convert a lon/lat coordinate in EPSG4326 (degrees) to mercator
+ * See https://gist.github.com/waynegraham/9213901
+ *
+ * @param float lon longitude
+ * @param float lat latitude
+ */
+function reproject($lon_lat) {
+    $space = strpos($lon_lat, " ");
+    $lon = floatval(substr($lon_lat, 0, $space));
+    $lat = floatval(substr($lon_lat, $space));
+    $x = $lon * 20037508.34 / 180.0;
+    $y = log(tan((90 + $lat) * pi() / 360.0)) / (pi() / 180.0);
+    $y = $y * 20037508.34 / 180.0;
+    $lon_lat_new = strval($x)." ".strval($y);
+    return $lon_lat_new;
+}
 
 /**
  * Given a raw coverage value, try to extract a valid WKT string. If the value
@@ -37,11 +54,18 @@ function nl_kml2wkt($kml) {
  * @return string|null WKT.
  */
 function nl_getWkt($coverage) {
-
+    debug("nl_getWkt");
     $wkt = null;
 
     // Return existing WKT.
     if (Validator::isValidWkt($coverage)) {
+        $matches = array();
+        preg_match_all('/(\d+.\d+ -?\d+.\d+)/', strtolower($coverage), $matches);
+        foreach($matches[1] as &$value) {
+            $value = reproject($value);
+        }
+        $coverage = "polygon((".implode(",", $matches[1])."))";
+        # Update lat/long pairs
         return $coverage;
     }
 
