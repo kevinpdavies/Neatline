@@ -235,7 +235,6 @@ class NeatlineRecord extends Neatline_Row_Expandable
      */
     public function compileWms()
     {
-        debug("compileWms");
         $this->is_wms = ($this->wms_address && $this->wms_layers);
         if (!$this->is_wms){
             
@@ -249,24 +248,20 @@ class NeatlineRecord extends Neatline_Row_Expandable
              
                 foreach ($ref_list as $ref){
                 
-                    debug(print_r($ref, true));
-                    
                     $url = parse_url($ref);
                     
                     if ($url) {
-                        debug(print_r($url, true));
                         
-                        if (stripos($url["path"], "wms") &&
-                            strpos($url["query"], "layers=") >= 0) {
-                            debug("true");
+                        // If the URL has a WMS server and layers then use it
+                        if (stripos($url["path"], "wms") !== FALSE &&
+                            stripos($url["query"], "layers=") !== FALSE) {
                             $this->wms_address =
                                 $url[scheme]."://".$url["host"].$url["path"];
                             parse_str($url["query"], $url_query);
                             $this->wms_layers = $url_query["layers"];
                             $this->fill_color = "#ffffff";
+                            break;
                         }
-                        debug($this->wms_layers);
-                        debug($this->wms_address);
                     }
                
                     // Try to convert it to WKT.
